@@ -3,6 +3,7 @@ package main
 import (
 	"Cousre-Go/course"
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -23,14 +24,14 @@ var interruptSignals = []os.Signal{
 }
 
 type Occupation struct {
-	Name string `json:"name"`
+	OccupationId   int    `json:"occupation_id"`
+	OccupationName string `json:"occupation"`
 }
 
 type CourseWithOccupations struct {
-	CourseID       uuid.UUID    `json:"CourseID"`
-	CourseTitle    string       `json:"CourseTitle"`
-	CourseLanguage *string      `json:"CourseLanguage"`
-	Occupations    []Occupation `json:"OccupationName"`
+	CourseID    uuid.UUID    `json:"CourseID"`
+	CourseTitle string       `json:"CourseTitle"`
+	Occupations []Occupation `json:"occupations"`
 }
 
 func main() {
@@ -49,42 +50,77 @@ func main() {
 
 	r.GET("/courses", func(c *gin.Context) {
 		rows, err := queries.GetAllCourse(c)
-
+		// log.Println("rows", rows)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		// Post-process the rows to group occupations by courses
-		courseMap := make(map[uuid.UUID]*CourseWithOccupations)
-
+		//coursesMap := make(map[uuid.UUID]CourseWithOccupations)
+		var coursesList []CourseWithOccupations
 		for _, row := range rows {
-			courseID := row.CourseID
+			// Define a slice to hold the list of Occupation structs
+			var occupations []Occupation
+
+			// Unmarshal the JSON byte slice into the slice of structs
+			err = json.Unmarshal(row.Occupations, &occupations)
+			if err != nil {
+				log.Fatalf("Error unmarshalling JSON data: %v", err)
+			}
+			courseID := row.ID
 			var uuidVal uuid.UUID
 			copy(uuidVal[:], courseID.Bytes[:])
-
-			// Initialize course if not already in the map
-			if _, exists := courseMap[uuidVal]; !exists {
-
-				courseMap[uuidVal] = &CourseWithOccupations{
-					CourseID:    uuid.UUID(courseID.Bytes),
-					CourseTitle: row.CourseTitle.String,
-					Occupations: []Occupation{},
-				}
+			course := CourseWithOccupations{
+				CourseID:    uuidVal,
+				CourseTitle: row.Title.String,
+				Occupations: occupations,
 			}
+			coursesList = append(coursesList, course)
 
-			// Add occupation to the course
-			if row.OccupationID.Valid {
-				courseMap[uuidVal].Occupations = append(courseMap[uuidVal].Occupations, Occupation{
-					Name: row.OccupationName.String,
-				})
-			}
+		}
+		result := map[string]interface{}{
+			"courses": coursesList,
 		}
 
-		// Convert the map to a slice of CourseWithOccupations
-		var result []CourseWithOccupations
-		for _, course := range courseMap {
-			result = append(result, *course)
-		}
+		// var occupation []Occupation
+		// //var result map[string]interface{}
+		// for _, row := range rows {
+		// 	fmt.Printf("%+v\n", row)
+		// 	fmt.Printf("%+v\n", row.Occupations)
+
+		// 	err1 := json.Unmarshal(row.Occupations, &occupation)
+		// 	if err1 != nil {
+		// 		log.Fatalf("Error unmarshalling byte data: %v", err)
+		// 	}
+		// }
+		// Define a map to hold the JSON data
+
+		// Post-process the rows to group occupations by courses
+		//courseMap := make(map[uuid.UUID]*CourseWithOccupations)
+
+		// for _, row := range rows {
+		// 	courseID := row.ID
+		// 	var uuidVal uuid.UUID
+		// 	copy(uuidVal[:], courseID.Bytes[:])
+
+		// 	if _, exists := courseMap[uuidVal]; !exists {
+		// 		courseMap[uuidVal] = &CourseWithOccupations{
+		// 			CourseID:    uuid.UUID(courseID.Bytes),
+		// 			CourseTitle: row.Title.String,
+		// 			Occupations: []Occupation{},
+		// 		}
+		// 	}
+		// 	if row.CourseID_3.Valid {
+		// 		courseMap[uuidVal].Occupations = append(courseMap[uuidVal].Occupations, Occupation{
+		// 			Name: row.Occupation.String,
+		// 		})
+		// 	}
+
+		// }
+		// var result []CourseWithOccupations
+		// for _, course := range courseMap {
+		// 	result = append(result, *course)
+		// }
+
 		c.JSON(http.StatusOK, result)
 	})
 
