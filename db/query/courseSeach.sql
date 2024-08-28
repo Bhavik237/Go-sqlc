@@ -7,3 +7,4 @@ LEFT JOIN course.course_statistics cs ON c.course_statistics_id = cs.id
 LEFT JOIN course.certificate_detail cd on c.certificate_detail_id =cd.id
 LEFT JOIN course.course_occupation co on c.id = co.course_id  
 group by  c.title,c.id;
+
