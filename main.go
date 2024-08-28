@@ -50,7 +50,6 @@ func main() {
 
 	r.GET("/courses", func(c *gin.Context) {
 		rows, err := queries.GetAllCourse(c)
-		// log.Println("rows", rows)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -80,46 +79,6 @@ func main() {
 		result := map[string]interface{}{
 			"courses": coursesList,
 		}
-
-		// var occupation []Occupation
-		// //var result map[string]interface{}
-		// for _, row := range rows {
-		// 	fmt.Printf("%+v\n", row)
-		// 	fmt.Printf("%+v\n", row.Occupations)
-
-		// 	err1 := json.Unmarshal(row.Occupations, &occupation)
-		// 	if err1 != nil {
-		// 		log.Fatalf("Error unmarshalling byte data: %v", err)
-		// 	}
-		// }
-		// Define a map to hold the JSON data
-
-		// Post-process the rows to group occupations by courses
-		//courseMap := make(map[uuid.UUID]*CourseWithOccupations)
-
-		// for _, row := range rows {
-		// 	courseID := row.ID
-		// 	var uuidVal uuid.UUID
-		// 	copy(uuidVal[:], courseID.Bytes[:])
-
-		// 	if _, exists := courseMap[uuidVal]; !exists {
-		// 		courseMap[uuidVal] = &CourseWithOccupations{
-		// 			CourseID:    uuid.UUID(courseID.Bytes),
-		// 			CourseTitle: row.Title.String,
-		// 			Occupations: []Occupation{},
-		// 		}
-		// 	}
-		// 	if row.CourseID_3.Valid {
-		// 		courseMap[uuidVal].Occupations = append(courseMap[uuidVal].Occupations, Occupation{
-		// 			Name: row.Occupation.String,
-		// 		})
-		// 	}
-
-		// }
-		// var result []CourseWithOccupations
-		// for _, course := range courseMap {
-		// 	result = append(result, *course)
-		// }
 
 		c.JSON(http.StatusOK, result)
 	})
